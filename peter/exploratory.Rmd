@@ -1,0 +1,149 @@
+---
+title: "shuffle analysis"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(cowplot)
+library(TopKLists)
+```
+
+## Data import and merging
+
+```{r, message=FALSE}
+peter <- read_csv("Peter_wash_shuffle_data.csv")
+sam <- read_csv("Sam_wash_shuffle_data.csv")
+caleb <- read_csv("Caleb_wash_shuffle_data_combined.csv")
+jordan <- read_csv("Jordan_wash_shuffle_data.csv")
+seena <- read_csv("Seena_wash_shuffle_data.csv")
+
+peter_wide <- peter %>% 
+  pivot_wider(id_cols=c(name, sequence_id, trial_id),
+              names_from=start_position,
+              values_from=end_position)
+
+sam_wide <- sam %>% 
+  pivot_wider(id_cols=c(name, sequence_id, trial_id),
+              names_from=start_position,
+              values_from=end_position)
+
+caleb_wide <- caleb %>% 
+  pivot_wider(id_cols=c(name, sequence_id, trial_id),
+              names_from=start_position,
+              values_from=end_position)
+
+jordan_wide <- jordan %>% 
+  pivot_wider(id_cols=c(name, sequence_id, trial_id),
+              names_from=start_position,
+              values_from=end_position)
+
+seena_wide <- seena %>% 
+  pivot_wider(id_cols=c(name, sequence_id, trial_id),
+              names_from=start_position,
+              values_from=end_position)
+
+```
+
+## Graphs
+
+### Where does the top card go?
+```{r, fig.height=10}
+ggplot(caleb, aes(x=end_position)) + 
+  geom_bar() + 
+  facet_wrap(~ start_position, ncol=5, scales="free") + 
+  theme_minimal(base_size=8) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(peter, aes(x=end_position)) + 
+  geom_bar() + 
+  facet_wrap(~ start_position, ncol=5, scales="free") + 
+  theme_minimal(base_size=8) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(sam, aes(x=end_position)) + 
+  geom_bar() + 
+  facet_wrap(~ start_position, ncol=5, scales="free") + 
+  theme_minimal(base_size=8) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+
+## Footrule
+
+### Unadjusted footrule calculations
+
+```{r}
+peter_fr <- NA
+for(i in 1:dim(peter_wide)[1]){
+  peter_fr[i] <- Spearman(1:52, as.numeric(as.vector(peter_wide[i,4:55])), 52, 52, 52)
+}
+
+sam_fr <- NA
+for(i in 1:dim(sam_wide)[1]){
+  sam_fr[i] <- Spearman(1:52, as.numeric(as.vector(sam_wide[i,4:55])), 52, 52, 52)
+}
+
+
+caleb_fr <- NA
+for(i in 1:dim(caleb_wide)[1]){
+  caleb_fr[i] <- Spearman(1:52, as.numeric(as.vector(caleb_wide[i,4:55])), 52, 52, 52)
+}
+
+
+jordan_fr <- NA
+for(i in 1:dim(jordan_wide)[1]){
+  jordan_fr[i] <- Spearman(1:52, as.numeric(as.vector(jordan_wide[i,4:55])), 52, 52, 52)
+}
+
+
+seena_fr <- NA
+for(i in 1:dim(seena_wide)[1]){
+  seena_fr[i] <- Spearman(1:52, as.numeric(as.vector(seena_wide[i,4:55])), 52, 52, 52)
+}
+```
+
+
+Checking for temporal trend within each person:
+
+```{r, fig.show='hold', fig.height=10}
+par(mfrow=c(5, 1), mar=c(2, 4, 1, 1))
+
+x <- 1:length(caleb_fr)
+plot(caleb_fr ~ x, type='l')
+
+x <- 1:length(jordan_fr)
+plot(jordan_fr ~ x, type='l')
+
+x <- 1:length(peter_fr)
+plot(peter_fr ~ x, type='l')
+
+x <- 1:length(sam_fr)
+plot(sam_fr ~ x, type='l')
+
+x <- 1:length(seena_fr)
+plot(seena_fr ~ x, type='l')
+```
+
+
+Compare distributions via histograms:
+```{r, fig.height=10}
+par(mfrow=c(5, 1), mar=c(3, 4, 1, 1))
+
+hist(caleb_fr, xlim=c(0, 1400))
+hist(jordan_fr, xlim=c(0, 1400))
+hist(peter_fr, xlim=c(0, 1400))
+hist(sam_fr, xlim=c(0, 1400))
+hist(seena_fr, xlim=c(0, 1400))
+```
+
+Pairwise K-S tests:
+
+```{r}
+ks_pvals <- matrix(NA, nrow=5, ncol=4)
+rownames(matrix) <- c("Caleb", "Jordan", "Peter", "Sam", "Seena")
+ks.test(caleb_fr, jordan_fr)$p.val
+```
+
